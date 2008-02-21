@@ -8,3 +8,11 @@
 source download:
 	http://code.google.com/p/erlswf/
 
+requirements:
+	Erlang >= OTP R12B
+
+mini-FAQ:
+Q: I can see error messages like "src/swfdt.erl:26: bit type bitstring undefined"
+"src/swfdt.erl:27: function bit_size/1 undefined".
+A: Please note the required erlang version.
+
