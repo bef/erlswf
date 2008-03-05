@@ -23,7 +23,12 @@ main(Args) ->
 			swfutils:dumptags(swf:parsetorawtags(swf:readfile(Filename)), [list_to_atom(Tagname) || Tagname <- Tagnames]);
 		["check" | Filenames] ->
 			traverse_files(fun(Filename) ->
-				swfutils:dumpsecuritycheck(swf:swffile(Filename))
+				try swfutils:dumpsecuritycheck(swf:swffile(Filename)) of
+					_ -> ok
+				catch
+					error:X ->
+						io:format("ERROR: ~p stacktrace: ~p~n", [X, erlang:get_stacktrace()])
+				end
 			end, Filenames);
 		%["tag21", Filename, Prefix] ->
 		%	swf:savetag21(swf:swffile(Filename), Prefix);
