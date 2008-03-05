@@ -16,7 +16,7 @@
 actionrecords(B) ->
 	actionrecords(B, 0, []).
 actionrecords(<<>> = B, Pos, Acc) ->
-	{actions, lists:reverse([{invalid_end_of_actionrecord, [{pos, Pos}]}|Acc]), B};
+	{actions, lists:reverse([{invalid_end_of_actionrecord, [{code, -1},{pos, Pos}]}|Acc]), B};
 actionrecords(<<0, B/binary>>, _Pos, Acc) ->
 	{actions, lists:reverse(Acc), B};
 actionrecords(<<0:1, ActionCode:7, B/binary>>, Pos, Acc) -> %% record w/o data
