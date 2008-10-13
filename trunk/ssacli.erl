@@ -5,9 +5,17 @@
 %%   license: GPLv3 - http://www.gnu.org/licenses/licenses.html#GPL
 %%
 
+libdir() ->
+	SN = escript:script_name(),
+	ScriptName = case file:read_link(SN) of
+		{ok, X} -> X;
+		_ -> SN
+	end,
+	filename:join(filename:dirname(ScriptName), "ebin").
+
 main(Args) ->
 	%% include path
-	code:add_patha("./ebin"),
+	code:add_patha(libdir()),
 	
 	%% log errors to console
 	error_logger:tty(true),

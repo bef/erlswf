@@ -15,3 +15,9 @@ doc:
 	./docgen.erl doc src/swf*.erl
 
 docs: doc
+
+install: soft_install
+
+soft_install:
+	ln -sf `pwd`/ssacli.erl /usr/local/bin/ssacli
+
