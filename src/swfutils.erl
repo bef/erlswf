@@ -7,7 +7,8 @@
 	dumpsecuritycheck/1,
 	silentsecuritycheck/1,
 	filtertags/2,
-	savetofile/3]).
+	savetofile/3,
+	tagencode/2]).
 
 -include("swf.hrl").
 
@@ -163,15 +164,16 @@ savetofile(Fmt, Args, Data) ->
 	io:format("saving ~p~n", [Outfilename]),
 	file:write_file(Outfilename, Data).
 
-%tagencode(Code, B) ->
-%	BSize = size(B),
-%	TagAndLength = case BSize >= 16#3f of
-%		true ->
-%			<<A, X>> = <<Code:10, 16#3f:6>>,
-%			<<X, A, BSize:32/signed-integer-little>>;
-%		false ->
-%			<<A, X>> = <<Code:10, BSize:6>>,
-%			<<X, A>>
-%	end,
-%	<<TagAndLength/binary, B/binary>>.
-%
+%% encode tag
+tagencode(Code, B) ->
+	BSize = size(B),
+	TagAndLength = case BSize >= 16#3f of
+		true ->
+			<<A, X>> = <<Code:10, 16#3f:6>>,
+			<<X, A, BSize:32/signed-integer-little>>;
+		false ->
+			<<A, X>> = <<Code:10, BSize:6>>,
+			<<X, A>>
+	end,
+	<<TagAndLength/binary, B/binary>>.
+
