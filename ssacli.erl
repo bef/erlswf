@@ -57,6 +57,10 @@ main(Args) ->
 				{_, Time2} = statistics(wall_clock),
 				io:format("	runtime: ~p~n	realtime:~p~n", [Time1, Time2])
 			end, Filenames);
+		["abcdump", Filename] ->
+			{ok, B} = file:read_file(Filename),
+			{X,_} = swfabc:abc(B),
+			io:format("~p~n", [X]);
 		_ ->
 			credits(),
 			usage()
@@ -77,6 +81,7 @@ usage() ->
 	io:format(Format, ["dumptags <swf> <tagname> ...", "dump specified tags only"]),
 	io:format(Format, ["test <swf1> ...", "test library (read swf w/o dump)"]),
 	io:format(Format, ["check <swf>", "check file for security issues (experimental/incomplete)"]),
+	io:format(Format, ["abcdump <abc>", "abc dump (experimental)"]),
 	halt(1).
 
 credits() ->
