@@ -115,11 +115,11 @@ multiname(<<Type, B/binary>>, CP) ->
 		16#07 ->
 			{NsIndex, R1} = u30(B),
 			{NameIndex, R2} = u30(R1),
-			{{'QName', {cpnamespace(NsIndex, CP), cpstring(NameIndex, CP)}}, R2};
+			{{'QName', cpnamespace(NsIndex, CP), cpstring(NameIndex, CP)}, R2};
 		16#0D ->
 			{NsIndex, R1} = u30(B),
 			{NameIndex, R2} = u30(R1),
-			{{'QNameA', {cpnamespace(NsIndex, CP), cpstring(NameIndex, CP)}}, R2};
+			{{'QNameA', cpnamespace(NsIndex, CP), cpstring(NameIndex, CP)}, R2};
 		16#0F ->
 			{NameIndex, R1} = u30(B),
 			{{'RTQName', cpstring(NameIndex, CP)}, R1};
@@ -133,17 +133,17 @@ multiname(<<Type, B/binary>>, CP) ->
 		16#09 ->
 			{NameIndex, R1} = u30(B),
 			{NsSetIndex, R2} = u30(R1),
-			{{'Multiname', {cpstring(NameIndex, CP), cpnsset(NsSetIndex, CP)}}, R2};
+			{{'Multiname', cpstring(NameIndex, CP), cpnsset(NsSetIndex, CP)}, R2};
 		16#0E ->
 			{NameIndex, R1} = u30(B),
 			{NsSetIndex, R2} = u30(R1),
-			{{'MultinameA', {cpstring(NameIndex, CP), cpnsset(NsSetIndex, CP)}}, R2};
+			{{'MultinameA', cpstring(NameIndex, CP), cpnsset(NsSetIndex, CP)}, R2};
 		16#1B ->
 			{NsSetIndex, R1} = u30(B),
-			{{'MultinameL', {cpnsset(NsSetIndex, CP)}}, R1};
+			{{'MultinameL', cpnsset(NsSetIndex, CP)}, R1};
 		16#1C ->
 			{NsSetIndex, R1} = u30(B),
-			{{'MultinameLA', {cpnsset(NsSetIndex, CP)}}, R1};
+			{{'MultinameLA', cpnsset(NsSetIndex, CP)}, R1};
 		_ ->
 			{{unknown, Type}, B}
 	end.
@@ -769,7 +769,7 @@ method_body_info(B, CP) ->
 	{Exception, R8} = array(fun exception_info/2, R7, [CP]),
 	{Trait, R9} = array(fun traits_info/2, R8, [CP]),
 	{#method_body{
-		method=Method,
+		methodi=Method,
 		max_stack=MaxStack,
 		local_count=LocalCount,
 		init_scope_depth=InitScopeDepth,
@@ -821,8 +821,22 @@ cpconstant(Kind, VIndex, CP) ->
 		16#0A -> false;
 		16#0C -> null;
 		16#00 -> undefined;
+		none -> none;
 		X when X =:= 16#08; X >= 16#16, X =< 16#1A; X =:= 16#05 ->
 			{namespace, cpnamespace(VIndex, CP)};
 		X -> {unknown, X}
 	end.
-	
+
+%% method access helper
+% method_and_body(MethodIndex, #abcfile{method=Methods, method_body=MB}) ->
+% 	Method = lists:nth(MethodIndex+1, Methods),
+% 	{value, Methodbody} = lists:keysearch(MethodIndex, 2, MB),
+% 	{Method, Methodbody}.
+
+method(Index, Methods) ->
+	lists:nth(Index+1, Methods).
+
+method_body(MethodIndex, #abcfile{method_body=MB}) ->
+	{value, Methodbody} = lists:keysearch(MethodIndex, 2, MB),
+	Methodbody.
+

@@ -8,7 +8,8 @@
 	silentsecuritycheck/1,
 	filtertags/2,
 	savetofile/3,
-	tagencode/2]).
+	tagencode/2,
+	abcdata/1]).
 
 -include("swf.hrl").
 
@@ -176,4 +177,12 @@ tagencode(Code, B) ->
 			<<X, A>>
 	end,
 	<<TagAndLength/binary, B/binary>>.
+
+
+abcdata(#swf{tags=RawTags}) ->
+	AbcTags = [swf:tagdecode(Tag) || Tag <- filtertags(['doABC', 'doABC1'], RawTags)],
+	lists:map(fun(#tag{contents=Contents}) ->
+		{value, {data, Abc}} = lists:keysearch(data, 1, Contents),
+		Abc
+	end, AbcTags).
 
