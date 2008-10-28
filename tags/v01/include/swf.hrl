@@ -1,0 +1,2 @@
+-record(swf, {header, tags}).
+-record(tag, {code, name, pos, raw, contents}).
