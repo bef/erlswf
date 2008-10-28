@@ -14,4 +14,4 @@
 -record(exception, {from, to, target, exc_type, var_name}).
 
 -record(instr, {addr, name, args}).
--record(method_body, {method, max_stack, local_count, init_scope_depth, max_scope_depth, code, exception, trait}).
+-record(method_body, {methodi, max_stack, local_count, init_scope_depth, max_scope_depth, code, exception, trait}).

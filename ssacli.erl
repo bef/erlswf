@@ -1,4 +1,5 @@
 #!/usr/bin/env escript
+-mode(compile).
 %%
 %% Command Line Interface for the simple swf analyzer
 %%   author: Ben Fuhrmannek <bef@pentaphase.de>
@@ -57,10 +58,26 @@ main(Args) ->
 				{_, Time2} = statistics(wall_clock),
 				io:format("	runtime: ~p~n	realtime:~p~n", [Time1, Time2])
 			end, Filenames);
-		["abcdump", Filename] ->
-			{ok, B} = file:read_file(Filename),
-			{X,_} = swfabc:abc(B),
+		["abcdump-raw", Filename] ->
+			{X,_} = swfabc:abc(swf:readfile(Filename)),
 			io:format("~p~n", [X]);
+		["abcdump", Filename|Parts] ->
+			abcdump(swf:readfile(Filename), Parts);
+		["abcdump-swf", Filename|Parts] ->
+			RawSwf = swf:parsetorawtags(swf:readfile(Filename)),
+			AbcList = swfutils:abcdata(RawSwf),
+			lists:foreach(fun(AbcBinary) -> abcdump(AbcBinary, Parts) end, AbcList);
+		["version", Filename] ->
+			{ok, Io} = file:open(Filename, [read]),
+			{ok, Start} = file:read(Io, 4),
+			file:close(Io),
+			PrintVersion =
+				fun(<<_, "WS", Version>>) ->
+					io:format("~p~n", [Version]);
+				(_) ->
+					io:format("undef~n",[])
+				end,
+			PrintVersion(list_to_binary(Start));
 		_ ->
 			credits(),
 			usage()
@@ -69,6 +86,14 @@ main(Args) ->
 	%% give io some time to complete
 	timer:sleep(500).
 	
+abcdump(AbcBinary, Parts) ->
+	io:format("~n----- ABCDUMP -----~n", []),
+	{ABC,_} = swfabc:abc(AbcBinary),
+	P = case Parts of
+		[] -> all;
+		_ -> Parts
+	end,
+	swfabcformat:abc(standard_io, ABC, P).
 
 usage() ->
 	Format = "	~s~n	### ~s ###~n~n",
@@ -81,7 +106,10 @@ usage() ->
 	io:format(Format, ["dumptags <swf> <tagname> ...", "dump specified tags only"]),
 	io:format(Format, ["test <swf1> ...", "test library (read swf w/o dump)"]),
 	io:format(Format, ["check <swf>", "check file for security issues (experimental/incomplete)"]),
-	io:format(Format, ["abcdump <abc>", "abc dump (experimental)"]),
+	io:format(Format, ["abcdump-raw <abc>", "raw abc dump - output in erlang syntax"]),
+	io:format(Format, ["abcdump-swf <swf> [version|cpool|metadata|scripts|methods|instances|classes]...", "dump swf's abc-parts in human readable format"]),
+	io:format(Format, ["abcdump <abc> [...]...", "same as abcdump-swf, but for abc files"]),
+	io:format(Format, ["version <swf>", "print swf version"]),
 	halt(1).
 
 credits() ->

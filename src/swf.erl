@@ -594,9 +594,7 @@ tag(78, <<CharacterID:16/unsigned-integer-little, R/binary>>) ->
 
 %% tags 79 to 81 are unknown
 
-tag(name, 82) -> 'doABC';
-%tag(82, <<Flags:32/unsigned-integer-little, Data/binary>>) ->  %% documented format incorrect??
-%	[{flags, Flags}, {data, Data}];
+tag(name, 82) -> 'doABC'; %% sometimes referred to as 'doABC2'
 tag(82, <<Flags:32/unsigned-integer-little, Data/binary>>) ->
 	{Name, B} = swfdt:string(Data),
 	[{flags, Flags}, {name, Name}, {data, B}];
