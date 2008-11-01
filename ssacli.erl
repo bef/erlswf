@@ -39,8 +39,6 @@ main(Args) ->
 						io:format("ERROR: ~p stacktrace: ~p~n", [X, erlang:get_stacktrace()])
 				end
 			end, Filenames);
-		%["tag21", Filename, Prefix] ->
-		%	swf:savetag21(swf:swffile(Filename), Prefix);
 		%["rmut", Infile, Outfile] ->
 		%	swf:rmut(swf:swffile(Infile), Outfile);
 		["test" | Filenames] ->
@@ -49,9 +47,6 @@ main(Args) ->
 			
 				%% decode swf
 				{swf, _H, _Tags} = swf:swffile(Filename),
-				%lists:foreach(fun({tag, Code, Name, Pos, Raw, DecodedTag}) ->
-				%	io:format("~p~n", [Name])
-				%	end, Tags),
 				
 				%% stop the clock
 				{_, Time1} = statistics(runtime),
@@ -62,11 +57,16 @@ main(Args) ->
 			{X,_} = swfabc:abc(swf:readfile(Filename)),
 			io:format("~p~n", [X]);
 		["abcdump", Filename|Parts] ->
-			abcdump(swf:readfile(Filename), Parts);
-		["abcdump-swf", Filename|Parts] ->
-			RawSwf = swf:parsetorawtags(swf:readfile(Filename)),
-			AbcList = swfutils:abcdata(RawSwf),
-			lists:foreach(fun(AbcBinary) -> abcdump(AbcBinary, Parts) end, AbcList);
+			Bin = swf:readfile(Filename),
+			case swfmime:getmime(Bin) of
+				swf ->
+					RawSwf = swf:parsetorawtags(Bin),
+					AbcList = swfutils:abcdata(RawSwf),
+					lists:foreach(fun(AbcBinary) -> abcdump(AbcBinary, Parts) end, AbcList);
+				abc ->
+					abcdump(swf:readfile(Filename), Parts);
+				_ -> io:format("unknown fileformat~n")
+			end;
 		["version", Filename] ->
 			{ok, Io} = file:open(Filename, [read]),
 			{ok, Start} = file:read(Io, 4),
@@ -100,15 +100,13 @@ usage() ->
 	io:format("usage: foo [cmd] [args]~n", []),
 	io:format(Format, ["dump <swf>", "dump whole swf"]),
 	io:format(Format,["rawdump <swf>", "debug dump"]),
-	%io:format("	tag21 <swf> <saveprefix>~n",[]),
 	io:format(Format, ["filedump <swf> <saveprefix>", "dump to file structure"]),
 	%io:format("	rmut <in_swf> <out_swf>~n",[]),
 	io:format(Format, ["dumptags <swf> <tagname> ...", "dump specified tags only"]),
 	io:format(Format, ["test <swf1> ...", "test library (read swf w/o dump)"]),
 	io:format(Format, ["check <swf>", "check file for security issues (experimental/incomplete)"]),
 	io:format(Format, ["abcdump-raw <abc>", "raw abc dump - output in erlang syntax"]),
-	io:format(Format, ["abcdump-swf <swf> [version|cpool|metadata|scripts|methods|instances|classes]...", "dump swf's abc-parts in human readable format"]),
-	io:format(Format, ["abcdump <abc> [...]...", "same as abcdump-swf, but for abc files"]),
+	io:format(Format, ["abcdump <swf|abc> [version|cpool|metadata|scripts|methods|instances|classes]...", "dump swf's abc-parts in human readable format"]),
 	io:format(Format, ["version <swf>", "print swf version"]),
 	halt(1).
 

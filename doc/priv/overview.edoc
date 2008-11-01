@@ -4,6 +4,8 @@
 
 @doc
 
-This auto generated documentation may serve as a starting point for both extensions of these modules and their usage.
+erlswf is a sophisticated framework for the decomposition and static analysis of SWF bytecode, ActionScript2 bytecode and ActionScript3 bytecode (ABC).
+
+This auto generated documentation may serve as a starting point for extending these modules and their usage.
 
 @end

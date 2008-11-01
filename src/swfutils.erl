@@ -32,18 +32,6 @@ dumpswftags([{rawtag, Code, Name, Pos, _Raw, _}|Rest]) ->
 	dumpswftags(Rest).
 
 
-%savetag21({swf, _Header, Tags}, Prefix) ->
-%	JpegTags = findtags([defineBitsJPEG2], Tags),
-%	savetag21tofile(JpegTags, Prefix).
-%savetag21tofile([], _Prefix) -> done;
-%savetag21tofile([{_Name, Contents, _Raw}|Rest], Prefix) ->
-%	{value, {characterID, CharacterID}} = lists:keysearch(characterID, 1, Contents),
-%	{value, {jpegData, Data}} = lists:keysearch(jpegData, 1, Contents),
-%	
-%	savetofile("~s~p.jpg", [Prefix, CharacterID], Data),
-%	
-%	savetag21tofile(Rest, Prefix).
-
 
 filedumpswf({swf, Header, Tags}, Prefix) ->
 	%% dump header
