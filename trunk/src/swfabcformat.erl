@@ -1,10 +1,19 @@
+%%
+%% @doc format abc dumps in a logically structured and human readable manner
+%%
+
 -module(swfabcformat).
--compile(export_all).
+-export([abc/1, abc/3, dtfmt/1]).
 -include("swfabc.hrl").
 
-abc(ABC) ->
-	abc(standard_io, ABC, all).
 
+%% @doc same as abc(standard_io, Abc, all)
+%% @spec abc(abc()) -> ok
+abc(Abc) ->
+	abc(standard_io, Abc, all).
+
+%% @doc stream fancy abc to given io device
+%% @spec abc(io_device(), abc(), [identifier()]) -> ok
 abc(Io, Abc, all) ->
 	abc(Io, Abc, ["version", "cpool", "metadata", "scripts", "classes"]);
 abc(_, _, []) -> ok;
@@ -22,8 +31,6 @@ abcfmt(Io, "methods", Abc) ->
 	methods(Io, Abc);
 abcfmt(Io, "scripts", Abc) ->
 	scripts(Io, Abc);
-% abcfmt(Io, "instances", Abc) ->
-% 	instances(Io, Abc);
 abcfmt(Io, "classes", Abc) ->
 	classes(Io, Abc);
 
@@ -85,7 +92,6 @@ methods(Io, [MB|MBs], Abc, N) ->
 	io:format(Io, "/* method no. ~p */~n", [N]),
 	method(Io, MB, Abc),
 	methods(Io, MBs, Abc, N+1).
-	% lists:foreach(fun(MB) -> method(Io, MB, Abc) end, MBs).
 
 method(Io, #method_body{methodi=Methodi, max_stack=MaxStack, local_count=LocalCount, init_scope_depth=InitScopeDepth, max_scope_depth=MaxScopeDepth, code=Code, exception=Exceptions, trait=Traits}, #abcfile{method=Methods}) ->
 	#method{param_count=ParamCount, return_type=ReturnType, param_type=ParamType, name=Name, flags=Flags, flags_arr=FlagsArr, options=Options, param_names=ParamNames} = swfabc:method(Methodi, Methods),
@@ -99,7 +105,6 @@ method(Io, #method_body{methodi=Methodi, max_stack=MaxStack, local_count=LocalCo
 	io:format(Io, "    // traits: ~p~n", [Traits]),
 	io:format(Io, "    // options: ~p~n", [Options]),
 	code(Io, Code),
-	%io:format(Io, "  ~p~n", [Code]),
 	io:format(Io, "  }~n", []),
 	ok.
 	

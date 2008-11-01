@@ -2,7 +2,9 @@
 %% @doc parse abc (avm2 bytecode)
 %%
 -module(swfabc).
--compile(export_all).
+-export([abc/1, method/2, method_body/2,
+	cpinteger/2, cpuinteger/2, cpdouble/2, cpstring/2, cpnamespace/2, cpnsset/2, cpmultiname/2]).
+% -compile(export_all).
 -include("swfabc.hrl").
 
 
@@ -506,7 +508,9 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 %  method_body_info method_body[method_body_count] 
 % } 
 
-abc(B) ->
+%% @doc parse binary abc bytecode
+%% @spec abc(binary()) -> abcfile()
+abc(B) when is_binary(B) ->
 	{MinorVersion, R1} = u16(B),
 	{MajorVersion, R2} = u16(R1),
 	{ConstantPool, R3} = cpool_info(R2),
@@ -655,7 +659,7 @@ metadata_info(B, CP) ->
 				Key = cpstring(KeyIndex, C),
 				{{Key, Value}, Q2}
 		end
-	end, R1),
+	end, R1, [CP]),
 	{{Name, Items}, R2}.
 
 
