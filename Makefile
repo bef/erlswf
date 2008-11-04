@@ -12,7 +12,7 @@ clean:
 	
 doc:
 	cp doc/priv/* doc
-	./docgen.erl doc src/swf*.erl
+	./docgen.erl doc src/*.erl
 
 docs: doc
 
