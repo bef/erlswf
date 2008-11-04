@@ -135,17 +135,17 @@ multiname(<<Type, B/binary>>, CP) ->
 		16#09 ->
 			{NameIndex, R1} = u30(B),
 			{NsSetIndex, R2} = u30(R1),
-			{{'Multiname', cpstring(NameIndex, CP), cpnsset(NsSetIndex, CP)}, R2};
+			{{'Multiname', cpstring(NameIndex, CP), {nsseti, NsSetIndex}}, R2};
 		16#0E ->
 			{NameIndex, R1} = u30(B),
 			{NsSetIndex, R2} = u30(R1),
-			{{'MultinameA', cpstring(NameIndex, CP), cpnsset(NsSetIndex, CP)}, R2};
+			{{'MultinameA', cpstring(NameIndex, CP), {nsseti, NsSetIndex}}, R2};
 		16#1B ->
 			{NsSetIndex, R1} = u30(B),
-			{{'MultinameL', cpnsset(NsSetIndex, CP)}, R1};
+			{{'MultinameL', {nsseti, NsSetIndex}}, R1};
 		16#1C ->
 			{NsSetIndex, R1} = u30(B),
-			{{'MultinameLA', cpnsset(NsSetIndex, CP)}, R1};
+			{{'MultinameLA', {nsseti, NsSetIndex}}, R1};
 		_ ->
 			{{unknown, Type}, B}
 	end.
