@@ -14,114 +14,72 @@ libdir() ->
 	end,
 	filename:join(filename:dirname(ScriptName), "ebin").
 
+error_msg(Msg, Args) ->
+	io:format("error: "++Msg++"~n", Args),
+	halt(1).
+
 main(Args) ->
 	%% include path
 	code:add_patha(libdir()),
 	
 	%% log errors to console
 	error_logger:tty(true),
+
+	Commands = ssamod:commands(),
 	
 	case Args of
-		["dump", Filename] ->
-			swfutils:dumpswf(swf:swffile(Filename));
-		["rawdump", Filename] ->
-			io:format("~p~n", [swf:swffile(Filename)]);
-		["filedump", Filename, Prefix] ->
-			swfutils:filedumpswf(swf:swffile(Filename), Prefix);
-		["dumptags", Filename | Tagnames] ->
-			swfutils:dumptags(swf:parsetorawtags(swf:readfile(Filename)), [list_to_atom(Tagname) || Tagname <- Tagnames]);
-		["check" | Filenames] ->
-			traverse_files(fun(Filename) ->
-				try swfutils:dumpsecuritycheck(swf:swffile(Filename)) of
-					_ -> ok
-				catch
-					error:X ->
-						io:format("ERROR: ~p stacktrace: ~p~n", [X, erlang:get_stacktrace()])
-				end
-			end, Filenames);
-		%["rmut", Infile, Outfile] ->
-		%	swf:rmut(swf:swffile(Infile), Outfile);
-		["test" | Filenames] ->
-			traverse_files(fun(Filename) ->
-				statistics(runtime), statistics(wall_clock), %% start the clock
-			
-				%% decode swf
-				{swf, _H, _Tags} = swf:swffile(Filename),
-				
-				%% stop the clock
-				{_, Time1} = statistics(runtime),
-				{_, Time2} = statistics(wall_clock),
-				io:format("	runtime: ~p~n	realtime:~p~n", [Time1, Time2])
-			end, Filenames);
-		["abcdump-raw", Filename] ->
-			{X,_} = swfabc:abc(swf:readfile(Filename)),
-			io:format("~p~n", [X]);
-		["abcdump", Filename|Parts] ->
-			Bin = swf:readfile(Filename),
-			case swfmime:getmime(Bin) of
-				swf ->
-					RawSwf = swf:parsetorawtags(Bin),
-					AbcList = swfutils:abcdata(RawSwf),
-					lists:foreach(fun(AbcBinary) -> abcdump(AbcBinary, Parts) end, AbcList);
-				abc ->
-					abcdump(swf:readfile(Filename), Parts);
-				_ -> io:format("unknown fileformat~n")
-			end;
-		["version", Filename] ->
-			{ok, Io} = file:open(Filename, [read]),
-			{ok, Start} = file:read(Io, 4),
-			file:close(Io),
-			PrintVersion =
-				fun(<<_, "WS", Version>>) ->
-					io:format("~p~n", [Version]);
-				(_) ->
-					io:format("undef~n",[])
-				end,
-			PrintVersion(list_to_binary(Start));
-		_ ->
+		[] -> %% show help
 			credits(),
-			usage()
+			usage(Commands);
+		["help", CmdName] ->
+			case lists:keysearch(CmdName, 1, Commands) of
+				{value, {_, _, CmdDetails}} -> longhelp(CmdName, CmdDetails);
+				false -> error_msg("no such command: \"~s\"", [CmdName])
+			end;
+		[Cmd|CArgs] ->
+			case lists:keysearch(Cmd, 1, Commands) of
+				{value, {_, Mod, _}} ->
+					run(Mod, [Cmd|CArgs]);
+				false ->
+					error_msg("invalid cmd: \"~s\"", [Cmd])
+			end
 	end,
-	
+
 	%% give io some time to complete
 	timer:sleep(500).
-	
-abcdump(AbcBinary, Parts) ->
-	io:format("~n----- ABCDUMP -----~n", []),
-	{ABC,_} = swfabc:abc(AbcBinary),
-	P = case Parts of
-		[] -> all;
-		_ -> Parts
-	end,
-	swfabcformat:abc(standard_io, ABC, P).
 
-usage() ->
-	Format = "	~s~n	### ~s ###~n~n",
-	io:format("usage: foo [cmd] [args]~n", []),
-	io:format(Format, ["dump <swf>", "dump whole swf"]),
-	io:format(Format,["rawdump <swf>", "debug dump"]),
-	io:format(Format, ["filedump <swf> <saveprefix>", "dump to file structure"]),
-	%io:format("	rmut <in_swf> <out_swf>~n",[]),
-	io:format(Format, ["dumptags <swf> <tagname> ...", "dump specified tags only"]),
-	io:format(Format, ["test <swf1> ...", "test library (read swf w/o dump)"]),
-	io:format(Format, ["check <swf>", "check file for security issues (experimental/incomplete)"]),
-	io:format(Format, ["abcdump-raw <abc>", "raw abc dump - output in erlang syntax"]),
-	io:format(Format, ["abcdump <swf|abc> [version|cpool|metadata|scripts|methods|instances|classes]...", "dump swf's abc-parts in human readable format"]),
-	io:format(Format, ["version <swf>", "print swf version"]),
-	halt(1).
+run(Mod, Args) ->
+	try Mod:run(Args) of
+		ok -> ok;
+		invalid_usage ->
+			error_msg("invalid usage. see help", []);
+		Err ->
+			error_msg("something went wrong: ~p", [Err])
+	catch
+		error:Err -> error_msg("~p: ~p", [Err, erlang:get_stacktrace()])
+	end.
+
+usage(Cmds) ->
+	io:format("usage: ~s [cmd] [args]~n", [escript:script_name()]),
+	io:format("  where [cmd] is one of~n~n"),
+	shorthelp(Cmds),
+	io:format("detailed help: help [cmd]~n~n").
+
+shorthelp(Cmds) ->
+	lists:foreach(fun({CmdName, Mod, CmdDetails}) ->
+		Usage = proplists:get_value(usage, CmdDetails, "(no usage / do not use)"),
+		ShortHelp = proplists:get_value(shorthelp, CmdDetails, "(no short help available)"),
+		io:format("  -> ~s (module: ~s)~n", [CmdName, atom_to_list(Mod)]),
+		io:format("  |  ~s~n", [Usage]),
+		io:format("  |  ~s~n~n", [ShortHelp])
+	end, lists:keysort(1, Cmds)).
+
+longhelp(CmdName, CmdDetails) ->
+	Usage = proplists:get_value(usage, CmdDetails, "(no usage / do not use)"),
+	ShortHelp = proplists:get_value(shorthelp, CmdDetails, "(no short help available)"),
+	LongHelp = proplists:get_value(longhelp, CmdDetails, "(no detailed help available)"),
+	io:format("*** help for '~s' ***~n", [CmdName]),
+	io:format("~s~n~n~s~n~n~s~n~n", [Usage, ShortHelp, LongHelp]).
 
 credits() ->
 	io:format(" ____ ____    _    ~n/ ___/ ___|  / \\   ~n\\___ \\___ \\ / _ \\  ~n ___) |__) / ___ \\ ~n|____/____/_/   \\_\\  (cl) Ben Fuhrmannek <bef@pentaphase.de>~n~n", []).
-
-traverse_files(Fun, Filenames) ->
-	lists:foreach(fun(F) ->
-		io:format("processing file ~p~n", [F]),
-		try Fun(F) of
-			_ -> ok
-		catch
-			throw:no_swf ->
-				io:format("	no swf~n", []);
-			error:data_error ->
-				io:format("	data error. unable to uncompress file~n", [])
-		end
-	end, Filenames).
