@@ -11,7 +11,7 @@
 	save_profile/2,
 	load_profile/1
 	]).
--include("ngram.hrl").
+%-include("ngram.hrl").
 
 
 %% @doc generate n-gram profile

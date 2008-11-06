@@ -46,16 +46,12 @@ readfile(Filename) ->
 %% @throws no_swf
 uncompress(<<"FWS", Version, FileLength:32, B/binary>>) ->
 	{rawswf1,
-		[	{type, fws},
-			{version, Version},
-			{fileLength, FileLength}],
+		#swfheader{type=fws, version=Version, filelength=FileLength},
 		B};
 
 uncompress(<<"CWS", Version, FileLength:32, B/binary>>) ->
 	{rawswf1,
-		[	{type, cws},
-			{version, Version},
-			{fileLength, FileLength}],
+		#swfheader{type=cws, version=Version, filelength=FileLength},
 		zlib:uncompress(B)};
 
 uncompress(_) -> throw(no_swf).
@@ -73,13 +69,13 @@ headerdecode({rawswf1, Header1, Raw}) ->
 	
 	%% assemble swf structure of the form {rawswf, Header, RawTags}
 	{rawswf,
-		Header1 ++ [
-			{framesize, FrameSize},
-			{framerate, FrameRate},
-			{framecount, FrameCount},
-			{headersize, HeaderSize},
-			{rawheader, RawHeader}
-		], R}.
+		Header1#swfheader{
+			framesize=FrameSize,
+			framerate=FrameRate,
+			framecount=FrameCount,
+			headersize=HeaderSize,
+			rawheader=RawHeader},
+		R}.
 
 %% @doc split raw tag blob into tag list
 %% @spec tagsplit(binary()) -> [rawtag()]

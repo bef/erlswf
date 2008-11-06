@@ -53,7 +53,7 @@ encodedu32(<<1:1, X:7/bitstring, Rest/binary>>, Count, Acc) when Count < 4 ->
 %% @spec string(binary()) -> {string(), binary()}
 string(S) -> string(S, []).
 string(<<>>, Acc) -> string(<<0>>, Acc); %% not nerminated by 0 ?
-string(<<0,R/binary>>, Acc) -> {lists:reverse(Acc), R};
+string(<<0,R/binary>>, Acc) -> {list_to_binary(lists:reverse(Acc)), R};
 string(<<A,R/binary>>, Acc) -> string(R, [A|Acc]).
 
 

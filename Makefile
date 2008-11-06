@@ -1,4 +1,4 @@
-.PHONY: all compile clean doc docs
+.PHONY: all compile clean doc docs lib
 
 all: compile
 
@@ -9,7 +9,10 @@ clean:
 	rm -f *.beam ebin/*.beam
 	rm -f erl_crash.dump
 	rm -f `find doc/* -prune -type f`
-	
+
+distclean: clean
+	make -C lib distclean
+
 doc:
 	cp doc/priv/* doc
 	./docgen.erl doc src/*.erl
@@ -20,4 +23,7 @@ install: soft_install
 
 soft_install:
 	ln -sf `pwd`/ssacli.erl /usr/local/bin/ssacli
+
+lib:
+	make -C lib
 

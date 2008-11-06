@@ -9,10 +9,11 @@
 	filtertags/2,
 	savetofile/3,
 	tagencode/2,
-	abcdata/1]).
+	abcdata/1,
+	abc2oplist/1]).
 
 -include("swf.hrl").
-
+-include("swfabc.hrl").
 
 %%
 %% utils
@@ -33,7 +34,7 @@ dumpswftags([{rawtag, Code, Name, Pos, _Raw, _}|Rest]) ->
 
 
 
-filedumpswf({swf, Header, Tags}, Prefix) ->
+filedumpswf(#swf{header=Header, tags=Tags}, Prefix) ->
 	%% dump header
 	savetofile("~s-header.erl", [Prefix], list_to_binary(io_lib:format("~p~n", [Header]))),
 	
@@ -44,26 +45,8 @@ filedumpswf({swf, Header, Tags}, Prefix) ->
 			end, swfformat:tagformat(Tag)),
 		Acc + 1 end, 1, Tags).
 
-%rmut({swf, Header, Tags}, Outfile) -> %% remove unknown tags
-%	AllKnownTags = lists:foldl(fun({Name, Contents, Raw}, Acc) ->
-%			KnownTag = case Name of
-%				unknownTag -> <<>>;
-%				_ ->
-%					{value, {code, Code}} = lists:keysearch(code, 1, Contents),
-%					tagencode(Code, Raw)
-%			end,
-%			<<Acc/binary, KnownTag/binary>>
-%		end, <<>>, Tags),
-%		
-%	{value, {rawheader, RawHeader}} = lists:keysearch(rawheader, 1, Header),
-%	{value, {version, Version}} = lists:keysearch(version, 1, Header),
-%	
-%	Body = zlib:compress(<<RawHeader/binary, AllKnownTags/binary>>),
-%	%Body = <<RawHeader/binary, AllKnownTags/binary>>,
-%	FileLength = size(Body),
-%	savetofile("~s", [Outfile], <<"CWS", Version, FileLength:32/unsigned-integer-little, Body/binary>>).
 
-dumptags({swf, _Header, RawTags}, Tagnames) ->
+dumptags(#swf{tags=RawTags}, Tagnames) ->
 	dumpswftags([swf:tagdecode(Tag) || Tag <- filtertags(Tagnames, RawTags)]).
 
 
@@ -173,4 +156,12 @@ abcdata(#swf{tags=RawTags}) ->
 		{value, {data, Abc}} = lists:keysearch(data, 1, Contents),
 		Abc
 	end, AbcTags).
+
+
+%% get op-list-list for n-gram analysis
+%% returns [[atom(),...],...]
+abc2oplist(#abcfile{method_body=MB}) ->
+	lists:map(fun(#method_body{code=Code}) ->
+		[C#instr.name || C <- Code]
+	end, MB).
 
