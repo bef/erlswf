@@ -1,2 +1,4 @@
 -record(swf, {header, tags}).
+-record(rawswf, {header, tags}).
+-record(swfheader, {type, version, filelength, framesize, framerate, framecount, headersize, rawheader}).
 -record(tag, {code, name, pos, raw, contents}).

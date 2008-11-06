@@ -6,13 +6,23 @@
 %%   license: GPLv3 - http://www.gnu.org/licenses/licenses.html#GPL
 %%
 
-libdir() ->
+addlibpath() ->
+	%% search for erlswf base directory
 	SN = escript:script_name(),
 	ScriptName = case file:read_link(SN) of
 		{ok, X} -> X;
 		_ -> SN
 	end,
-	filename:join(filename:dirname(ScriptName), "ebin").
+	SwfBaseDir = filename:dirname(ScriptName),
+
+	code:add_patha(filename:join(SwfBaseDir, "ebin")),
+	
+	%% search for json library
+	case code:which(rfc4627) of
+		non_existing ->
+			code:add_patha(filename:join([SwfBaseDir, "lib", "erlang-rfc4627", "ebin"]));
+		_ -> ok
+	end.
 
 error_msg(Msg, Args) ->
 	io:format("error: "++Msg++"~n", Args),
@@ -20,7 +30,7 @@ error_msg(Msg, Args) ->
 
 main(Args) ->
 	%% include path
-	code:add_patha(libdir()),
+	addlibpath(),
 	
 	%% log errors to console
 	error_logger:tty(true),

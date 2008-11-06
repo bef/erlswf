@@ -16,7 +16,9 @@
 		{shorthelp, "dump specified tags only"}]},
 	{"test", [
 		{usage, "test <swfs>..."},
-		{shorthelp, "test library (read swf w/o dump)"}]}
+		{shorthelp, "test library (read swf w/o dump)"}]},
+	{"jsondump", [
+		{usage, "jsondump <swf>"}]}
 	]).
 
 
@@ -44,5 +46,11 @@ run(["test" | Filenames]) ->
 		{_, Time2} = statistics(wall_clock),
 		io:format("	runtime: ~p~n	realtime:~p~n", [Time1, Time2])
 	end, Filenames);
+
+run(["jsondump", Filename]) ->
+	Swf = swf:swffile(Filename),
+	Obj = swfjson:obj(Swf),
+	JsonStr = rfc4627:encode(Obj),
+	io:format("~s~n", [JsonStr]);
 
 run(_) -> invalid_usage.
