@@ -1,0 +1,1 @@
+-record(ngramprofile, {type, n, l, data}).

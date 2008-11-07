@@ -9,9 +9,11 @@
 	intersect_profiles/2,
 	simplified_distance/2,
 	save_profile/2,
-	load_profile/1
+	load_profile/1,
+	merge_profiles/2, merge_profiles/1,
+	incr_pl/3
 	]).
-%-include("ngram.hrl").
+-include("ngram.hrl").
 
 
 %% @doc generate n-gram profile
@@ -21,18 +23,18 @@ ngram(N, PL, L) when length(L) < N ->
 	PL;
 ngram(N, PL, [_|R]=L) ->
 	{Key,_} = lists:split(N, L),
-	PL2 = incr_pl(Key, PL),
+	PL2 = incr_pl(Key, PL, 1),
 	% io:format("~p ~p ~p~n", [length(PL2), Key, length(L)]),
 	ngram(N, PL2, R).
 
 %% @doc same as ngram(N, [], L)
 ngram(N, L) -> ngram(N, [], L).
 
-%% @doc increase integer value of property list by one
-incr_pl(Key, PL) ->
+%% @doc increase integer value of property list entry by I
+incr_pl(Key, PL, I) ->
 	Val = proplists:get_value(Key, PL, 0),
 	PL2 = proplists:delete(Key, PL),
-	P = proplists:property(Key, Val+1),
+	P = proplists:property(Key, Val+I),
 	[P|PL2].
 
 
@@ -70,10 +72,21 @@ simplified_distance(P1, P2) ->
 	end, P1s),
 	{length(P1s), lists:sum(Ndist)}.
 
+%% @doc merge two profiles
+%% @spec merge_profiles(profile(), profile()) -> profile()
+merge_profiles(P1, P2) ->
+	lists:foldl(fun({K, V}, Acc) ->
+		incr_pl(K, Acc, V)
+	end, P1, P2).
 
-%% incomplete
+%% @doc merge many profiles
+%% @spec merge_profiles([profile()]) -> profile()
+merge_profiles([]) -> [];
+merge_profiles([P1|L]) ->
+	lists:foldl(fun(P, Acc) -> merge_profiles(Acc, P) end, P1, L).
 
-save_profile(Filename, P) ->
+
+save_profile(Filename, #ngramprofile{}=P) ->
 	file:write_file(Filename, term_to_binary(P)).
 load_profile(Filename) ->
 	{ok, B} = file:read_file(Filename),

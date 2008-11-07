@@ -11,12 +11,21 @@ source download:
 requirements:
 	Erlang >= OTP R12B-0
 
-installation:
-	type "make" and then "sudo make install"
-
 license:
 	GNU General Public License version 3
 	see http://www.gnu.org/licenses/gpl.html
+
+compile:
+	$ make lib
+	$ make
+
+install:
+	$ make install
+	This creates a symlink in /usr/local/bin. Type 'ssacli' for a quick start.
+
+API documentation:
+	$ make doc
+
 
 mini-FAQ:
 Q: I can see error messages like "src/swfdt.erl:26: bit type bitstring undefined"

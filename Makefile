@@ -1,4 +1,4 @@
-.PHONY: all compile clean doc docs lib
+.PHONY: all compile clean doc docs lib test
 
 all: compile
 
@@ -9,9 +9,11 @@ clean:
 	rm -f *.beam ebin/*.beam
 	rm -f erl_crash.dump
 	rm -f `find doc/* -prune -type f`
+	make -C test clean
 
 distclean: clean
 	make -C lib distclean
+	make -C test clean
 
 doc:
 	cp doc/priv/* doc
@@ -27,3 +29,5 @@ soft_install:
 lib:
 	make -C lib
 
+test:
+	make -C test
