@@ -3,7 +3,8 @@
 %%
 -module(swfabc).
 -export([abc/1, method/2, method_body/2,
-	cpinteger/2, cpuinteger/2, cpdouble/2, cpstring/2, cpnamespace/2, cpnsset/2, cpmultiname/2]).
+	cpinteger/2, cpuinteger/2, cpdouble/2, cpstring/2, cpnamespace/2, cpnsset/2, cpmultiname/2,
+	u8/1, u16/1, s24/1, u32/1, u30/1, s32/1, d64/1, string/1]).
 % -compile(export_all).
 -include("swfabc.hrl").
 
