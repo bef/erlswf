@@ -1,1 +1,1 @@
--record(ngramprofile, {type, n, l, data}).
+-record(ngramprofile, {name, type, n, l, data}).
