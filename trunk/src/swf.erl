@@ -378,16 +378,29 @@ tag(33, _) ->
 
 tag(name, 34) -> 'defineButton2';
 tag(34, <<ButtonID:16/unsigned-integer-little,
-		0:7, %% reserved
+		_:7, %% reserved
 		TrackAsMenu:1,
 		B/binary>>) ->
-	<<_ActionOffset:16/unsigned-integer-little, _R1/binary>> = B,
-	%{BR, Rest} = buttonrecords2(R1),
-	%io:format("actionoffset: ~p, sizeoffset: ~p~n", [ActionOffset, (size(B)-size(Rest))]),
-	[{buttonID, ButtonID},
-	{trackAsMenu, TrackAsMenu},
-	%{buttonRecords, BR},
-	unimplemented];
+	<<ActionOffset:16/unsigned-integer-little, _R1/binary>> = B,
+	<<CharB:ActionOffset/binary, ActionB/binary>> = B,
+	{CharB, ActionB} = case ActionOffset of
+		0 -> {B, <<>>};
+		_ -> <<CB:ActionOffset/binary, AB/binary>> = B,
+			{CB, AB}
+	end,
+	Characters = unimplemented,
+	% {Characters, _} = swfdt:buttonrecords2(CharB),
+	
+	Actions = case ActionOffset of
+		0 -> [];
+		_ -> swfdt:buttoncondactions(ActionB)
+	end,
+
+	[
+		{buttonID, ButtonID},
+		{trackAsMenu, TrackAsMenu},
+		{characters, Characters}
+	] ++ Actions;
 
 tag(name, 35) -> 'defineBitsJPEG3';
 tag(35, <<	CharacterID:16/unsigned-integer-little,
