@@ -410,3 +410,6 @@ clipactions(<<0:16, %% reserved
 		B/binary>>) ->
 	{unimplemented, B}.
 
+rgb(<<R, G, B, Rest/binary>>) -> {{rgb, R, G, B}, Rest}.
+rgba(<<R, G, B, A, Rest/binary>>) -> {{rgba, R, G, B, A}, Rest}.
+argb(<<A, R, G, B, Rest/binary>>) -> {{argb, A, R, G, B}, Rest}.

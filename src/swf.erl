@@ -404,8 +404,94 @@ tag(36, _) ->
 	[unimplemented];
 
 tag(name, 37) -> 'defineEditText';
-tag(37, _) ->
-	[unimplemented];
+tag(37, <<	CharacterID:16/unsigned-integer-little, R/binary>>) ->
+	{Bounds, R1} = swfdt:rect(R),
+	<<Flagbits:16/integer-big, R2/binary>> = R1,
+	Flags = lists:foldl(fun(I, FAcc) ->
+		case Flagbits band (1 bsl (15-I)) of
+			0 -> FAcc;
+			_ ->
+				case I of
+					0 -> [hasText|FAcc];
+					1 -> [wordWrap|FAcc];
+					2 -> [multiline|FAcc];
+					3 -> [password|FAcc];
+					4 -> [readOnly|FAcc];
+					5 -> [hasTextColor|FAcc];
+					6 -> [hasMaxLength|FAcc];
+					7 -> [hasFont|FAcc];
+					8 -> [hasFontClass|FAcc];
+					9 -> [autoSize|FAcc];
+					10 -> [hasLayout|FAcc];
+					11 -> [noSelect|FAcc];
+					12 -> [border|FAcc];
+					13 -> [wasStatic|FAcc];
+					14 -> [html|FAcc];
+					15 -> [useOutlines|FAcc]
+				end
+		end
+	end, [], lists:seq(0,15)),
+	{Opt, _Rest} = lists:foldl(fun(El, {Acc, B}) ->
+		case El of
+			a ->
+				case lists:member(hasFont, Flags) of
+					true -> {FontID, B1} = swfdt:ui16(B), {[{fontID, FontID}|Acc], B1};
+					false -> {Acc, B}
+				end;
+			b ->
+				case lists:member(hasFontClass, Flags) of
+					true -> {FontClass, B1} = swfdt:string(B), {[{fontClass, FontClass}|Acc], B1};
+					false -> {Acc, B}
+				end;
+			c ->
+				case lists:member(hasFont, Flags) of
+					true -> {FontHeight, B1} = swfdt:ui16(B), {[{fontHeight, FontHeight}|Acc], B1};
+					false -> {Acc, B}
+				end;
+			d ->
+				case lists:member(hasTextColor, Flags) of
+					true -> {TextColor, B1} = swfdt:rgba(B), {[{textColor, TextColor}|Acc], B1};
+					false -> {Acc, B}
+				end;
+			e ->
+				case lists:member(hasMaxLength, Flags) of
+					true -> {MaxLength, B1} = swfdt:ui16(B), {[{maxLength, MaxLength}|Acc], B1};
+					false -> {Acc, B}
+				end;
+			f ->
+				case lists:member(hasLayout, Flags) of
+					true ->
+						<<Align,
+						LeftMargin:16/unsigned-integer-little,
+						RightMargin:16/unsigned-integer-little,
+						Indent:16/unsigned-integer-little,
+						Leading:16/signed-integer-little,
+						B1/binary>> = B,
+						AlignName = case Align of
+							0 -> left;
+							1 -> right;
+							2 -> center;
+							3 -> justify;
+							_ -> unknown
+						end,
+						{[{align, AlignName}, {leftMargin, LeftMargin}, {rightMargin, RightMargin}, {indent, Indent}, {leading, Leading}|Acc], B1};
+					false -> {Acc, B}
+				end;
+			g ->
+				{VarName, B1} = swfdt:string(B), {[{variableName, VarName}|Acc], B1};
+			h ->
+				case lists:member(hasText, Flags) of
+					true -> {InitialText, B1} = swfdt:string(B), {[{initialText, InitialText}|Acc], B1};
+					false -> {Acc, B}
+				end
+		end 
+	end, {[], R2}, [a,b,c,d,e,f,g,h]),
+	
+	[
+		{characterID, CharacterID},
+		{bounds, Bounds},
+		{flags, Flagbits},
+		{flagsArr, Flags}] ++ Opt;
 
 %% tag 38: defineVideo (undocumented)
 
@@ -563,8 +649,16 @@ tag(72, <<Data/binary>>) ->
 	[{data, Data}];
 
 tag(name, 73) -> 'defineFontAlignZones';
-tag(73, _) ->
-	[unimplemented];
+tag(73, <<FontID:16/unsigned-integer-little,
+		CSMTableHint:2, _Reserved:6,
+		_R/binary>>) ->
+	Thickness = case CSMTableHint of
+		0 -> thin;
+		1 -> medium;
+		2 -> thick;
+		_ -> unknown
+	end,
+	[{fontID, FontID}, {csmTableHint, CSMTableHint}, {thickness, Thickness}, {zoneTable, unimplemented}];
 
 tag(name, 74) -> 'csmTextSettings';
 tag(74, _) ->
