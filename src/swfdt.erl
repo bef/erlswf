@@ -239,18 +239,18 @@ buttonrecord(<<0:2, %% reserved
 		{placeDepth, PlaceDepth},
 		{placeMatrix, PlaceMatrix}], Rest}.
 
-%buttonrecord2(<<0:2,
-%	HasBlendMode:1,
-%	HasFilterList:1,
-%	_/bitstring>> = B) ->
-%	{buttonrecord, BR, R1} = buttonrecord(B),
-%	{cxformwithalpha, CX, R2} = cxformwithalpha(R1),
-%	{filterlist, FL, R3} = filterlistcond(HasFilterList, R2),
-%	{blendmode, BM, R4} = case HasBlendMode of
-%		0 -> {blendmode, none, R3};
-%		1 -> <<BlendMode, R5/binary>> = R3, {blendmode, BlendMode, R5}
-%	end,
-%	{buttonrecord, [{cxFormWithAlpha, CX}, {filterList, FL}, {blendMode, BM}|BR], R4}.
+% buttonrecord2(<<0:2,
+% 	HasBlendMode:1,
+% 	HasFilterList:1,
+% 	_/bitstring>> = B) ->
+% 	{buttonrecord, BR, R1} = buttonrecord(B),
+% 	{cxformwithalpha, CX, R2} = cxformwithalpha(R1),
+% 	{filterlist, FL, R3} = filterlistcond(HasFilterList, R2),
+% 	{blendmode, BM, R4} = case HasBlendMode of
+% 		0 -> {blendmode, none, R3};
+% 		1 -> <<BlendMode, R5/binary>> = R3, {blendmode, BlendMode, R5}
+% 	end,
+% 	{buttonrecord, [{cxFormWithAlpha, CX}, {filterList, FL}, {blendMode, BM}|BR], R4}.
 
 
 records(B, Fun) ->
@@ -413,3 +413,21 @@ clipactions(<<0:16, %% reserved
 rgb(<<R, G, B, Rest/binary>>) -> {{rgb, R, G, B}, Rest}.
 rgba(<<R, G, B, A, Rest/binary>>) -> {{rgba, R, G, B, A}, Rest}.
 argb(<<A, R, G, B, Rest/binary>>) -> {{argb, A, R, G, B}, Rest}.
+
+
+buttoncondactions(B) ->
+	buttoncondactions(B, []).
+
+buttoncondactions(<<Size:16/unsigned-integer-little, R/binary>> = B, Acc) ->
+	Acc2 = [buttoncondaction(R)|Acc],
+	
+	<<_Skip:Size/binary, NextB/binary>> = B,
+	case Size of
+		0 -> lists:reverse(Acc2);
+		_ -> buttoncondactions(NextB, Acc2)
+	end.
+
+buttoncondaction(<<Conditions:16, R/binary>>) ->
+	{actions, Actions, _} = swfaction:actionrecords(R),
+	{buttoncondaction, Actions, Conditions}.
+
