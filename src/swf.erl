@@ -661,8 +661,18 @@ tag(73, <<FontID:16/unsigned-integer-little,
 	[{fontID, FontID}, {csmTableHint, CSMTableHint}, {thickness, Thickness}, {zoneTable, unimplemented}];
 
 tag(name, 74) -> 'csmTextSettings';
-tag(74, _) ->
-	[unimplemented];
+tag(74, <<TextID:16/unsigned-integer-little,
+		UseFlashType:2, GridFit:3, _Reserved:3,
+		Thickness:32/unsigned-float-little,
+		Sharpness:32/unsigned-float-little,
+		_Reserved2, _/binary>>) ->
+	[
+		{textID, TextID},
+		{useFlashType, case UseFlashType of 0 -> normal; 1 -> advanced; _ -> unknown end},
+		{gridFit, case GridFit of 0 -> none; 1 -> pixel; 2 -> subpixel; _ -> unknown end},
+		{thickness, Thickness},
+		{sharpness, Sharpness}
+	];
 
 tag(name, 75) -> 'defineFont2';
 tag(75, _) ->
