@@ -31,3 +31,21 @@ lib:
 
 test:
 	make -C test
+
+stat:
+	@all_erls="src/*erl ssacli.erl test/*.erl include/*.hrl" ;\
+	echo "lines of code (w/o comments):" ;\
+	cat `echo $$all_erls` |grep -v '^[[:space:]]*$$' |grep -v "^%" |wc -l ;\
+	echo "functions:" ;\
+	cat `echo $$all_erls` |grep  '^[a-z].*(.*) ->' |wc -l ;\
+	echo "inline functions (fun()s)" ;\
+	cat `echo $$all_erls` |grep  'fun(' |wc -l ;\
+	echo "total comments:" ;\
+	cat `echo $$all_erls` |grep  '%% ' |wc -l ;\
+	echo "pure comments:" ;\
+	cat `echo $$all_erls` |grep  '^[[:space:]]*%% ' |wc -l ;\
+	echo "@doc comments:" ;\
+	cat `echo $$all_erls` |grep  '^%% @doc' |wc -l ;\
+	echo "lines including binaries (<<>>):" ;\
+	cat `echo $$all_erls` |grep  '<<' |wc -l ;\
+	echo
