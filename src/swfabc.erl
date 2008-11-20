@@ -133,6 +133,10 @@ multiname(<<Type, B/binary>>, CP) ->
 			{{'RTQNameL'}, B};
 		16#12 ->
 			{{'RTQNameLA'}, B};
+		16#13 -> %% not in docu
+			{{'NameL'}, B};
+		16#14 -> %% not in docu
+			{{'NameLA'}, B};
 		16#09 ->
 			{NameIndex, R1} = u30(B),
 			{NsSetIndex, R2} = u30(R1),
@@ -147,8 +151,12 @@ multiname(<<Type, B/binary>>, CP) ->
 		16#1C ->
 			{NsSetIndex, R1} = u30(B),
 			{{'MultinameLA', {nsseti, NsSetIndex}}, R1};
+		16#1D -> %% not in docu
+			{NameIndex, R1} = u30(B),
+			{TypeNameIndexArray, R2} = array(fun u30/1, R1),
+			{{'TypeName', NameIndex, TypeNameIndexArray}, R2};
 		_ ->
-			{{unknown, Type}, B}
+			throw({invalid_multiname, Type}) %{{unknown, Type}, B}
 	end.
 
 option_detail(B, CP) ->
@@ -180,6 +188,7 @@ traits_info(B, CP) ->
 		3 -> setter;
 		_ -> invalid
 	end,
+	% io:format("trait kind ~p~n", [Kind]),
 	{Data, R3} = case Kind of
 		X when X =:= 0; X =:= 6 -> %% trait slot or const
 			{SlotId, Q1} = u30(R2),
@@ -267,7 +276,7 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 	
 	Op = case OpCode of
 		% 16#00 -> unknown_0x00; %% not is spec
-		
+		16#01 -> bkpt; %% not in docu
 		16#02 -> nop;
 		16#03 -> throw;
 		16#04 -> Fun_Multiname(getsuper);
@@ -278,12 +287,12 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#07 -> dxnslate;
 		16#08 -> Fun_Idx(kill);
 		16#09 -> label;
-		
+		% 16#0a ?
+		% 16#0b ?
 		16#0c -> Fun_Offset(ifnlt);
 		16#0d -> Fun_Offset(ifnle);
 		16#0e -> Fun_Offset(ifngt);
 		16#0f -> Fun_Offset(ifnge);
-		
 		16#10 -> Fun_Offset(jump);
 		16#11 -> Fun_Offset(iftrue);
 		16#12 -> Fun_Offset(iffalse);
@@ -306,7 +315,7 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#1f -> hasnext;
 		16#20 -> pushnull;
 		16#21 -> pushundefined;
-		
+		% 16#22 ?
 		16#23 -> nextvalue;
 		16#24 ->
 			{Byte, R} = u8(B),
@@ -325,7 +334,6 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 			{Idx, R} = u30(B),
 			{pushint, [cpinteger(Idx, CP)], R};
 		16#2e -> Fun_Idx(pushuint);
-
 		16#2f ->
 			{Idx, R} = u30(B),
 			{pushdouble, [cpdouble(Idx, CP)], R};
@@ -337,7 +345,19 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 			{I1, R1} = u30(B),
 			{I2, R2} = u30(R1),
 			{hasnext2, [I1, I2], R2};
-
+		% 16#33 ?
+		% 16#34 ?
+		16#35 -> fmo_si8; %% fast memory op
+		16#36 -> fmo_si16; %% fast memory op
+		16#37 -> fmo_si32; %% fast memory op
+		16#38 -> fmo_sf32; %% fast memory op
+		16#39 -> unknown_0x39_possibly_fmo; %% unknown
+		16#3a -> fmo_li8; %% fast memory op
+		16#3b -> fmo_li16; %% fast memory op
+		16#3c -> fmo_li32; %% fast memory op
+		16#3d -> fmo_lf32; %% fast memory op
+		16#3e -> fmo_lf64; %% fast memory op
+		% 16#3f ?
 		16#40 ->
 			{Idx, R} = u30(B),
 			{newfunction, [{method, Idx}], R};
@@ -356,40 +376,42 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#47 -> returnvoid;
 		16#48 -> returnvalue;
 		16#49 -> Fun_Arg(constructsuper);
-
+		16#4a -> Fun_Multiname_Arg(constructprop);
+		% 16#4b ?
 		16#4c -> Fun_Multiname_Arg(callproplex);
-
+		% 16#4d ?
 		16#4e -> Fun_Multiname_Arg(callsupervoid);
 		16#4f -> Fun_Multiname_Arg(callpropvoid);
-
-		16#4a -> Fun_Multiname_Arg(constructprop);
-		
+		16#50 -> fmo_sxi1; %% fast memory op
+		16#51 -> fmo_sxi8; %% fast memory op
+		16#52 -> fmo_sxi16; %% fast memory op
+		16#53 -> applytype; %% not in docu
+		% 16#54 ?
 		16#55 -> Fun_Arg(newobject);
 		16#56 -> Fun_Arg(newarray);
 		16#57 -> newactivation;
 		16#58 -> Fun_Idx(newclass);
 		16#59 -> Fun_Multiname(getdescendants);
-		
 		16#5a -> Fun_Idx(newcatch);
-
+		% 16#5b ?
+		% 16#5c ?
 		16#5d -> Fun_Multiname(findpropstrict);
 		16#5e -> Fun_Multiname(findproperty);
-		
+		% 16#5f ?
 		16#60 -> Fun_Multiname(getlex);
 		16#61 -> Fun_Multiname(setproperty);
 		16#62 -> Fun_Idx(getlocal);
 		16#63 -> Fun_Idx(setlocal);
 		16#64 -> getglobalscope;
-
 		16#65 ->
 			{Idx, R} = u8(B),
 			{getscopeobject, [Idx], R};
 		16#66 -> Fun_Multiname(getproperty);
-
+		% 16#67 ?
 		16#68 -> Fun_Multiname(initproperty);
-
+		% 16#69 ?
 		16#6a -> Fun_Multiname(deleteproperty);
-
+		% 16#6b ?
 		16#6c -> Fun_Idx(getslot);
 		16#6d -> Fun_Idx(setslot);
 		16#6e -> Fun_Idx(getglobalslot);
@@ -403,16 +425,29 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#76 -> convert_b;
 		16#77 -> convert_o;
 		16#78 -> checkfilter;
-
+		% 16#79 ?
+		% 16#7a ?
+		% 16#7b ?
+		% 16#7c ?
+		% 16#7d ?
+		% 16#7e ?
+		% 16#7f ?
 		16#80 -> Fun_Multiname(coerce);
-
+		% 16#81 ?
 		16#82 -> coerce_a;
-
+		% 16#83 ?
+		% 16#84 ?
 		16#85 -> coerce_s;
-
 		16#86 -> Fun_Multiname(astype);
 		16#87 -> astypelate;
-
+		% 16#88 ?
+		% 16#89 ?
+		% 16#8a ?
+		% 16#8b ?
+		% 16#8c ?
+		% 16#8d ?
+		% 16#8e ?
+		% 16#8f ?
 		16#90 -> negate;
 		16#91 -> increment;
 		16#92 -> Fun_Idx(inclocal);
@@ -421,7 +456,14 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#95 -> typeof;
 		16#96 -> 'not';
 		16#97 -> bitnot;
-
+		% 16#98 ?
+		% 16#99 ?
+		% 16#9a ?
+		% 16#9b ?
+		% 16#9c ?
+		% 16#9d ?
+		% 16#9e ?
+		% 16#9f ?
 		16#a0 -> add;
 		16#a1 -> subtract;
 		16#a2 -> multiply;
@@ -443,7 +485,17 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#b2 -> Fun_Multiname(istype);
 		16#b3 -> istypelate;
 		16#b4 -> in;
-		
+		% 16#b5 ?
+		% 16#b6 ?
+		% 16#b7 ?
+		% 16#b8 ?
+		% 16#b9 ?
+		% 16#ba ?
+		% 16#bb ?
+		% 16#bc ?
+		% 16#bd ?
+		% 16#be ?
+		% 16#bf ?
 		16#c0 -> increment_i;
 		16#c1 -> decrement_i;
 		16#c2 -> Fun_Idx(inclocal_i);
@@ -452,7 +504,14 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#c5 -> add_i;
 		16#c6 -> subtract_i;
 		16#c7 -> multiply_i;
-		
+		% 16#c8 ?
+		% 16#c9 ?
+		% 16#ca ?
+		% 16#cb ?
+		% 16#cc ?
+		% 16#cd ?
+		% 16#ce ?
+		% 16#cf ?
 		16#d0 -> getlocal_0;
 		16#d1 -> getlocal_1;
 		16#d2 -> getlocal_2;
@@ -461,7 +520,29 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#d5 -> setlocal_1;
 		16#d6 -> setlocal_2;
 		16#d7 -> setlocal_3;
-		
+		% 16#d8 ?
+		% 16#d9 ?
+		% 16#da ?
+		% 16#db ?
+		% 16#dc ?
+		% 16#dd ?
+		% 16#de ?
+		% 16#df ?
+		% 16#e0 ?
+		% 16#e1 ?
+		% 16#e2 ?
+		% 16#e3 ?
+		% 16#e4 ?
+		% 16#e5 ?
+		% 16#e6 ?
+		% 16#e7 ?
+		% 16#e8 ?
+		% 16#e9 ?
+		% 16#ea ?
+		% 16#eb ?
+		% 16#ec ?
+		% 16#ed ?
+		% 16#ee ?
 		16#ef ->
 			{DebugType, R1} = u8(B),
 			{RegNameIdx, R2} = u30(R1),
@@ -469,12 +550,25 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 			{Reg, R3} = u8(R2),
 			{_Extra, R} = u30(R3),
 			{debug, [DebugType, RegName, Reg], R};
-
 		16#f0 -> Fun_Idx(debugline);
 		16#f1 ->
 			{Idx, R} = u30(B),
 			{debugfile, [cpstring(Idx, CP)], R};
-		X -> throw({invalid, X}) %{{invalid, X}, B}
+		% 16#f2 ?
+		% 16#f3 ?
+		% 16#f4 ?
+		% 16#f5 ?
+		% 16#f6 ?
+		% 16#f7 ?
+		% 16#f8 ?
+		% 16#f9 ?
+		% 16#fa ?
+		% 16#fb ?
+		% 16#fc ?
+		% 16#fd ?
+		% 16#fe ?
+		% 16#ff ?
+		X -> throw({invalid_opcode, X}) %{{invalid, X}, B}
 	end,
 	
 	{Name, Args, Rest} = case Op of
@@ -562,7 +656,7 @@ cpool_info(B) ->
 	{Namespace, R5} = array0(fun namespace/2, R4, [#cpool{string=String}]),
 	{NsSet, R6} = array0(fun ns_set/2, R5, [#cpool{namespace=Namespace}]),
 	{Multiname, R7} = array0(fun multiname/2, R6, [#cpool{namespace=Namespace, string=String, ns_set=NsSet}]),
-		
+	
 	{#cpool{
 		integer=Integer,
 		uinteger=Uinteger,
@@ -842,6 +936,7 @@ method(Index, Methods) ->
 	lists:nth(Index+1, Methods).
 
 method_body(MethodIndex, #abcfile{method_body=MB}) ->
-	{value, Methodbody} = lists:keysearch(MethodIndex, 2, MB),
-	Methodbody.
-
+	case lists:keysearch(MethodIndex, 2, MB) of
+		{value, Methodbody} -> Methodbody;
+		false -> {unknown_method_index, MethodIndex}
+	end.
