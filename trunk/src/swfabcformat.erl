@@ -106,7 +106,9 @@ method(Io, #method_body{methodi=Methodi, max_stack=MaxStack, local_count=LocalCo
 	io:format(Io, "    // options: ~p~n", [Options]),
 	code(Io, Code),
 	io:format(Io, "  }~n", []),
-	ok.
+	ok;
+method(Io, Unknown, _Abc) ->
+	io:format(Io, "  unknown method: ~p~n", [Unknown]).
 	
 code(_, []) -> ok;
 code(Io, [#instr{addr=Addr, name=Name, args=Args}|R]) ->
@@ -199,8 +201,11 @@ traitfmt(Io, #trait{name=NameI, type=Type, data=Data, metadata=Metadata}, #abcfi
 			io:format(Io, "  ~s ~s ~s = ~s /* slot id: ~p */~n", [atom_to_list(Type), dtfmt(TypeName), dtfmt(Name), dtfmt(Value), SlotId]);
 		#trait_method{disp_id=DispId, methodi=MethodI} ->
 			io:format("  ~s /* disp id ~p */~n", [dtfmt(Name), DispId]),
-			Methodbody = swfabc:method_body(MethodI, Abc),
-			method(Io, Methodbody, Abc);
+			% try begin
+				Methodbody = swfabc:method_body(MethodI, Abc),
+				method(Io, Methodbody, Abc),
+			% end catch error:X -> throw({traitexc, MethodI, X}) end,
+			ok;
 		_ -> %% unknown/unimplemented trait type
 			io:format(Io, "  trait ~s ~s~n", [atom_to_list(Type), dtfmt(Name)]),
 			io:format(Io, "    data: ~p~n", [Data]),
