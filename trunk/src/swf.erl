@@ -79,34 +79,40 @@ headerdecode({rawswf1, Header1, Raw}) ->
 
 %% @doc split raw tag blob into tag list
 %% @spec tagsplit(binary()) -> [rawtag()]
-%%   where
 tagsplit(B) ->
-	tagsplit(B, 0).
+	tagsplit(B, 0, []).
 
-tagsplit(<<TagCodeAndLength1:8, TagCodeAndLength2:8, B/binary>>, InPos) ->
+tagsplit(<<>>, _, Acc) ->
+	lists:reverse(Acc);
+
+tagsplit(<<TagCodeAndLength1:8, TagCodeAndLength2:8, B/binary>>, InPos, Acc) ->
 	%% decode tag code and preliminary tag length
-	<<TagCode:10, TagLength:6>> = <<TagCodeAndLength2, TagCodeAndLength1>>,
+	<<TagCode:10, TagLength0:6>> = <<TagCodeAndLength2, TagCodeAndLength1>>,
+
+	%% decode possibly overflowing length
+	{TagLength, B2} = case TagLength0 of
+		16#3f ->
+			<<Length:32/signed-integer-little, R1/binary>> = B,
+			{Length, R1};
+		_ ->
+			{TagLength0, B}
+	end,
 	
-	Pos = InPos + 2, %% add two bytes (tag code and length) to current binary position in taglist
-	
-	{{Code, Name, Raw}, Rest} = tagdecode1(TagCode, TagLength, B),
+	%% cut tag by length
+	{{Code, Name, Raw}, Rest} = tagcut(TagCode, TagLength, B2),
 	debug("found tag: ~p~n", [{Code, Name}]),
 	
-	NewPos = Pos + size(B) - size(Rest),
-	[#tag{code=Code, name=Name, pos=Pos, raw=Raw} | tagsplit(Rest, NewPos)];
+	%% recalculate position in binary
+	Pos = InPos + 2 + (size(B)-size(B2)), %% add bytes (tag code and length) to current binary position in taglist
+	NewPos = InPos + 2 + (size(B) - size(Rest)),
 
-tagsplit(<<>>, _) -> [].
+	tagsplit(Rest, NewPos, [#tag{code=Code, name=Name, pos=Pos, raw=Raw} | Acc]).
 
-tagdecode1(Code, 16#3f, <<Length:32/signed-integer-little, B/binary>>) ->
-	%debug("length overflow~n",[]),
-	tagdecode2(Code, Length, B);
-tagdecode1(Code, Length, B) ->
-	tagdecode2(Code, Length, B).
-
-tagdecode2(Code, Length, B) ->
+tagcut(Code, Length, B) ->
 	<<TB:Length/binary, R/binary>> = B,
 	Name = tag(name, Code),
 	{{Code, Name, TB}, R}.
+
 
 %% @doc decode rawtag
 %% @spec tagdecode(rawtag()) -> tag()
