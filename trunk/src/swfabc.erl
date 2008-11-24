@@ -351,7 +351,7 @@ code(<<OpCode/unsigned-integer, B/binary>>, CP, Acc, Addr) ->
 		16#36 -> fmo_si16; %% fast memory op
 		16#37 -> fmo_si32; %% fast memory op
 		16#38 -> fmo_sf32; %% fast memory op
-		16#39 -> unknown_0x39_possibly_fmo; %% unknown
+		16#39 -> fmo_sf64; %% fast memory op
 		16#3a -> fmo_li8; %% fast memory op
 		16#3b -> fmo_li16; %% fast memory op
 		16#3c -> fmo_li32; %% fast memory op
