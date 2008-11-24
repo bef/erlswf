@@ -7,7 +7,8 @@
 	ngramfold/2, ngramfold/3,
 	cut_profile/2,
 	intersect_profiles/2,
-	simplified_distance/2,
+	expand_profiles/2,
+	distance/2, simplified_distance/2, common_distance/2,
 	save_profile/2,
 	load_profile/1,
 	merge_profiles/2, merge_profiles/1,
@@ -61,16 +62,40 @@ intersect_profiles(P1, P2) ->
 	P2out = lists:filter(fun({K,_}) -> lists:keymember(K, 1, P1out) end, P2),
 	{P1out, P2out}.
 
-%% @doc simplified profile intersection (SPI)
-%% @spec simplified_distance(profile(), profile()) -> {IntersectionLength::integer(), Distance::float()}
-simplified_distance(P1, P2) ->
-	{P1s, P2s} = intersect_profiles(P1, P2),
+%% @doc calculate P1 cup P2 / add missing keys with value 0
+%% the resulting profiles are of equal length
+%% @spec expand_profiles(profile(), profile()) -> {profile(), profile()}
+expand_profiles(P1, P2) ->
+	P1a = [{K,0} || {K,_} <- lists:filter(fun({K,_}) -> not lists:keymember(K, 1, P2) end, P1)],
+	P2a = [{K,0} || {K,_} <- lists:filter(fun({K,_}) -> not lists:keymember(K, 1, P1) end, P2)],
+	{lists:append(P1, P2a), lists:append(P2, P1a)}.
+
+%% @doc calculate distance between profiles.
+%% profiles must be of equal length and contain the same keys
+%% @spec distance(profile(), profile()) -> Distance::float()
+distance(P1, P2) when length(P1) =:= length(P2) ->
 	Ndist = lists:map(fun({K, V1}) ->
-		{value, {K, V2}} = lists:keysearch(K, 1, P2s),
+		{value, {K, V2}} = lists:keysearch(K, 1, P2),
 		X = (2 * (V1-V2)) / (V1 + V2),
 		X*X
-	end, P1s),
-	{length(P1s), lists:sum(Ndist)}.
+	end, P1),
+	lists:sum(Ndist).
+
+%% @doc simplified profile intersection (SPI) distance.
+%% intersect, then calculate distance
+%% @spec simplified_distance(profile(), profile()) -> {IntersectionLength::integer(), Distance::float()}
+simplified_distance(P1, P2) ->
+	{P1a, P2a} = intersect_profiles(P1, P2),
+	Ndist = distance(P1a, P2a),
+	{length(P1a), Ndist}.
+
+%% @doc common distance
+%% expand profiles, then calculate distance
+%% @spec common_distance(profile(), profile()) -> {IntersectionLength::integer(), Distance::float()}
+common_distance(P1, P2) ->
+	{P1a, P2a} = expand_profiles(P1, P2),
+	Ndist = distance(P1a, P2a),
+	{length(P1a), Ndist}.
 
 %% @doc merge two profiles
 %% @spec merge_profiles(profile(), profile()) -> profile()

@@ -1,7 +1,7 @@
 -module(ngram_SUITE).
 -compile(export_all).
 
-all() -> [ngram_n_lt_l, ngram, incr_pl, ngramfold, cut_profile, intersect_profiles, simplified_distance, merge_profiles].
+all() -> [ngram_n_lt_l, ngram, incr_pl, ngramfold, cut_profile, intersect_profiles, expand_profiles, simplified_distance, merge_profiles].
 
 
 ngram_n_lt_l(_Config) ->
@@ -23,6 +23,9 @@ cut_profile(_) ->
 
 intersect_profiles(_) ->
 	{[{b,2}],[{b,1}]} = ngram:intersect_profiles([{a,1}, {b,2}, {c,3}], [{d,4}, {b,1}]), ok.
+
+expand_profiles(_) ->
+	{[{a,1},{b,0}],[{b,2},{a,0}]} = ngram:expand_profiles([{a,1}], [{b,2}]), ok.
 
 simplified_distance(_) ->
 	{1, 1.0} = ngram:simplified_distance([{a,1}, {b,3}, {c,3}], [{d,4}, {b,1}]), ok.
