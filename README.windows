@@ -1,0 +1,19 @@
+Notes on running erlswf on Windows:
+1. Install Erlang (http://erlang.org) 5.6.x / OTP R12
+2. Install Cygwin (http://cygwin.org) with at least the following packages:
+	- bash
+	- gnu make
+	- svn
+	- mercurial
+2b. (alternative to 2) Install equivalent components from MinGW or other sources.
+3. Start bash and add erlang to PATH:
+	$ export PATH="$PATH:/cygdrive/e/Programme/erl5.6.5/bin"
+   The path (/cygdrive/e/...) should reflect your erlang installation's bin directory.
+3b. You may want to add this to your ~/.bash_profile or ~/.bashrc
+3c. Check the added path, e.g. "type erl"
+4. Download/Build/Install/Run erlswf as described in README
+4b. The symlinked ssacli may not work properly in cygwin. Just run ./ssacli.erl from the erlswf directory.
+4c. A non-cygwin Erlang installation as described above cannot handle Unix-style path names in command line arguments, e.g. /cygdrive/c/Downloads/test.swf. Use escaped Windows-style instead:
+	$ ./ssacli.erl dump C:\\Downloads\\test.swf
+
+
