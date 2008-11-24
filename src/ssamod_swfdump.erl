@@ -3,14 +3,37 @@
 
 -commands([
 	{"dump", [
-		{usage, "version <swf>"},
-		{shorthelp, "dump whole SWF"}]},
+		{usage, "dump <swf>"},
+		{shorthelp, "dump whole SWF"},
+		{longhelp, "
+	example:
+		$ ssacli dump foo.swf
+		** header: {swfheader,cws,10,352780288,
+		                      {rect,0,10000,0,7500},
+		                      24,1,13,
+		                      <<120,0,4,226,0,0,14,166,0,0,24,1,0>>}
+		** <00000002> [069] fileAttributes : [{hasMetadata,1},
+		                                      {actionScript3,1},
+		                                      {useNetwork,1}]
+		...
+	
+	tag output syntax
+		** <address> [tag-id] tag-name : tag-contents
+	address points to the first byte of the tag's contents / skips the header
+	"}]},
 	{"rawdump", [
 		{usage, "rawdump <swf>"},
 		{shorthelp, "debug dump"}]},
 	{"filedump", [
 		{usage, "filedump <swf> <saveprefix>"},
-		{shorthelp, "dump whole SWF to file structure"}]},
+		{shorthelp, "dump whole SWF to file structure"},
+		{longhelp,"the following example creates various dump files dump/foo-* from foo.swf
+		
+	create dump directory
+	$ mkdir dump
+	
+	dump:
+	$ ssacli filedump foo.swf dump/foo"}]},
 	{"dumptags", [
 		{usage, "dumptags <swf> <tagnames>..."},
 		{shorthelp, "dump specified tags only"}]},
