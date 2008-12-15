@@ -758,7 +758,20 @@ tag(name, 89) -> 'startSound2';
 tag(89, _) ->
 	[unimplemented];
 
-tag(name, _) ->	'unknownTag';
+tag(name, 90) -> 'defineBitsJPEG4';
+tag(90, <<CharacterID:16/unsigned-integer-little,
+		AlphaDataOffset:32/unsigned-integer-little,
+		DeblockParam:16/unsigned-integer-little,
+		ImageData:AlphaDataOffset/binary,
+		BitmapAlphaData/binary>>) ->
+	[{characterID, CharacterID}, {deblockParam, DeblockParam}, {imageData, ImageData}, {bitmapAlphaData, BitmapAlphaData}];
+
+tag(name, 91) -> 'defineFont4';
+tag(91, <<FontID:16/unsigned-integer-little, Flags:8, S/binary>>) ->
+	{Name, R1} = swfdt:string(S),
+	[{fontId, FontID}, {flags, Flags}, {name, Name}, {data, R1}];
+
+tag(name, _) -> 'unknownTag';
 tag(_Code, _B) ->
 	[unknown].
 
