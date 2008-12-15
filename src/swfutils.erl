@@ -10,7 +10,9 @@
 	savetofile/3,
 	tagencode/2,
 	abcdata/1,
-	abc2oplist/1]).
+	actiondata/1,
+	abc2oplist/1,
+	actions2oplist/1]).
 
 -include("swf.hrl").
 -include("swfabc.hrl").
@@ -157,6 +159,18 @@ abcdata(#swf{tags=RawTags}) ->
 		Abc
 	end, AbcTags).
 
+actiondata(#swf{tags=RawTags}) ->
+	ActionTags = [swf:tagdecode(Tag) || Tag <- filtertags(['doAction', 'doInitAction', 'defineButton', 'defineButton2'], RawTags)],
+	lists:map(fun(#tag{contents=Contents}) ->
+		case lists:keysearch(actions, 1, Contents) of
+			{value, {_, Actions}} -> Actions;
+			false -> case lists:keysearch(buttoncondaction, 1, Contents) of
+				{value, {_, Actions, _}} -> Actions;
+				false -> []
+			end
+		end
+	end, ActionTags).
+
 
 %% get op-list-list for n-gram analysis
 %% returns [[atom(),...],...]
@@ -164,4 +178,7 @@ abc2oplist(#abcfile{method_body=MB}) ->
 	lists:map(fun(#method_body{code=Code}) ->
 		[C#instr.name || C <- Code]
 	end, MB).
+
+actions2oplist(Actions) ->
+	lists:map(fun({Name, _}) -> Name end, Actions).
 

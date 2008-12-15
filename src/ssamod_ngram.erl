@@ -10,8 +10,11 @@
 	new <profile> <name> <type> <n> <l>
 		create new profile with given parameters, e.g. ngram new foo.profile foo abc 3 200
 	
-	dump <profile>
+	debug dump <profile>
 		debug-dump profile
+	
+	debug actions <swf>
+		debug list actions
 	
 	add <profile> <swf|abc>...
 		populate profile -- training
@@ -20,7 +23,7 @@
 	]).
 
 
-run(["ngram", "new", Filename, Name, "abc"=Type, N, L]) ->
+run(["ngram", "new", Filename, Name, Type, N, L]) ->
 	ngram:save_profile(Filename,
 		#ngramprofile{
 			name=Name,
@@ -31,7 +34,10 @@ run(["ngram", "new", Filename, Name, "abc"=Type, N, L]) ->
 		}),
 	ok;
 
-run(["ngram", "dump", Filename]) ->
+run(["ngram", "debug", "actions", Filename]) ->
+	io:format("~p~n", [getactionoplist(Filename)]), ok;
+
+run(["ngram", "debug", "dump", Filename]) ->
 	P = ngram:load_profile(Filename),
 	io:format("~p~n", [P]),
 	ok;
@@ -44,7 +50,7 @@ run(["ngram", "add", ProfileFilename | Filenames]) ->
 	io:format("profile ~s: n=~p l=~p~n", [P1#ngramprofile.name, N, L]),
 	
 	Profile = lists:foldl(fun(F, PL) ->
-		calcprofile(F, PL, N, L)
+		calcprofile(F, PL, N, L, P1#ngramprofile.type)
 	end, P1#ngramprofile.data, Filenames),
 	
 	%% save profile
@@ -60,7 +66,7 @@ run(["ngram", "distance" | FL]) ->
 	% L = P1#ngramprofile.l,
 	
 	PProfiles = lists:map(fun(Fn) ->
-		{Fn, calcprofile(Fn, [], N, 20000)}
+		{Fn, calcprofile(Fn, [], N, 20000, P1#ngramprofile.type)}
 	end, FNs),
 	
 	lists:foreach(fun({Fn, PP}) ->
@@ -77,9 +83,13 @@ run(["ngram", "distance" | FL]) ->
 run(_) -> invalid_usage.
 
 
-calcprofile(F, P0, N, L) ->
+calcprofile(F, P0, N, L, Type) ->
 	io:format("processing file ~p~n", [F]),
-	LL = getabcoplist(F),
+	LL = case Type of
+		abc -> getabcoplist(F);
+		action -> getactionoplist(F);
+		T -> throw({unknown_profile_type, T})
+	end,
 	
 	%% print stats
 	NumFuncs = length(LL),
@@ -108,3 +118,12 @@ getabcoplist(Filename) ->
 		_ ->
 			io:format("unknown fileformat~n"), []
 	end.
+
+getactionoplist(Filename) ->
+	Bin = swf:readfile(Filename),
+	RawSwf = swf:parsetorawtags(Bin),
+	ActionL = swfutils:actiondata(RawSwf),
+	lists:map(fun(AL) ->
+		swfutils:actions2oplist(AL)
+	end, ActionL).
+	
