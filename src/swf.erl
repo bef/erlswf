@@ -388,12 +388,8 @@ tag(34, <<ButtonID:16/unsigned-integer-little,
 		TrackAsMenu:1,
 		B/binary>>) ->
 	<<ActionOffset:16/unsigned-integer-little, _R1/binary>> = B,
-	<<CharB:ActionOffset/binary, ActionB/binary>> = B,
-	{CharB, ActionB} = case ActionOffset of
-		0 -> {B, <<>>};
-		_ -> <<CB:ActionOffset/binary, AB/binary>> = B,
-			{CB, AB}
-	end,
+	<<_CharB:ActionOffset/binary, ActionB/binary>> = B,
+
 	Characters = unimplemented,
 	% {Characters, _} = swfdt:buttonrecords2(CharB),
 	
@@ -401,7 +397,7 @@ tag(34, <<ButtonID:16/unsigned-integer-little,
 		0 -> [];
 		_ -> swfdt:buttoncondactions(ActionB)
 	end,
-
+	
 	[
 		{buttonID, ButtonID},
 		{trackAsMenu, TrackAsMenu},
@@ -584,8 +580,20 @@ tag(59, <<SpriteID:16/unsigned-integer-little, ActionRecord/binary>>) ->
 	[{spriteID, SpriteID}, {actions, Actions}];
 
 tag(name, 60) -> 'defineVideoStream';
-tag(60, _) ->
-	[unimplemented];
+tag(60, <<CharacterId:16/unsigned-integer-little,
+		NumFrames:16/unsigned-integer-little,
+		Width:16/unsigned-integer-little,
+		Height:16/unsigned-integer-little,
+		_VFReserved:4, VFDeblocking:3, VFSmoothing:1,
+		CodecId>>) ->
+	[
+		{characterID, CharacterId},
+		{numFrames, NumFrames},
+		{width, Width}, {height, Height},
+		{vfDeblocking, VFDeblocking},
+		{vfSmoothing, VFSmoothing},
+		{codecId, CodecId}
+	];
 
 tag(name, 61) -> 'videoFrame';
 tag(61, _) ->
