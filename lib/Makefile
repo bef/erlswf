@@ -2,9 +2,9 @@ all: getjsonlib compilejsonlib
 
 getjsonlib:
 	if [ -d "erlang-rfc4627" ]; then \
-		cd erlang-rfc4627 ; hg update ;\
+		cd erlang-rfc4627 ; git pull ;\
 	else \
-		hg clone http://hg.opensource.lshift.net/erlang-rfc4627/ ;\
+		git clone https://github.com/tonyg/erlang-rfc4627.git ;\
 	fi
 
 compilejsonlib:
